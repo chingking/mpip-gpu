@@ -599,6 +599,29 @@ pt2ptList = [
     "MPI_Ssend"
   ]
 
+### TODO: support more MPI primitives
+# cudampi_List = pt2ptList + collectiveList
+
+cudampi_List = [ 
+    "MPI_Bsend",
+    "MPI_Ibsend",
+    "MPI_Irsend",
+    "MPI_Isend",
+    "MPI_Issend",
+    "MPI_Rsend",
+    "MPI_Send",
+    "MPI_Ssend",
+    "MPI_Brecv",
+    "MPI_Ibrecv",
+    "MPI_Irrecv",
+    "MPI_Irecv",
+    "MPI_Isrecv",
+    "MPI_Rrecv",
+    "MPI_Recv",
+    "MPI_Srecv",
+    #"MPI_Sendrecv",
+    #"MPI_Sendrecv_replace",
+  ]
 
 class VarDesc:
     def __init__ (self,name, basetype, pointerLevel, arrayLevel):
@@ -1051,10 +1074,18 @@ def CreateWrapper(funct, olist):
     olist.append(")")
     # start wrapper code
     olist.append("\n{\n")
+
     olist.append( " int rc, enabledState;\n double dur;\n int tsize;\n double messSize = 0.;\n double ioSize = 0.;\n double rmaSize =0.;\n mpiPi_TIME start, end;\n void *call_stack[MPIP_CALLSITE_STACK_DEPTH_MAX] = { NULL };\n" )
     olist.append( "  mpiPi_mt_stat_tls_t *hndl;\n" )
 
     olist.append("\n  hndl = mpiPi_stats_mt_gettls(&mpiPi.task_stats);\n")
+    
+    # CUDA buffer check
+    if funct in cudampi_List :
+        olist.append("#ifdef ENABLE_CUDA_MPI\n")
+        olist.append("  int is_cuda_buf = is_cuda_buffer(buf);\n")
+        olist.append("  if (is_cuda_buf==0) hndl->tls_ptr->disabled = 1;\n")
+        olist.append("#endif\n")
 
     olist.append("\nif (mpiPi_stats_mt_is_on(hndl)) {\n")
     if fdict[funct].wrapperPreList:
@@ -1528,6 +1559,9 @@ def GenerateWrappers():
       
     olist.append("#include \"mpiPi_def.h\"\n")
     olist.append("\n")
+    olist.append("#ifdef ENABLE_CUDA_MPI\n")
+    olist.append("#include \"osu-mpiP-cuda-check.h\"\n")
+    olist.append("#endif\n")
 
     for funct in flist:
 	CreateWrapper(funct, olist)
