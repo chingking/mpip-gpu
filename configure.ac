@@ -596,11 +596,10 @@ fi
 
 if test "$ENABLE_CUDA_MPI" = yes ; then
 AC_CHECK_FUNC(cudaMalloc,
-              AC_DEFINE([HAVE_CUDA_MPI], [], [Have CUDA_MPI]) HAVE_CUDA_MPI=cuda.mpi.txt,
 	      AC_CHECK_LIB(cudart,cudaMalloc, 
-                AC_DEFINE([HAVE_CUDA_MPI],[],[Have CUDA-MPI]) HAVE_CUDA_MPI=cuda.mpi.txt LIBS="${LIBS} -lcudart",
+                AC_DEFINE([ENABLE_CUDA_MPI],[],[Have CUDA-MPI]) ENABLE_CUDA_MPI=cuda.mpi.txt LIBS="${LIBS} -lcudart",
                 AC_MSG_RESULT(CUDA symbols not found.  CUDA-Aware MPI reporting deactivated.)
-                HAVE_CUDA_MPI=/dev/null
+                ENABLE_CUDA_MPI=/dev/null
                 ENABLE_CUDA_MPI=no
                 exit 1)
 )

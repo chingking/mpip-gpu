@@ -5763,10 +5763,6 @@ fi
 if test "$ENABLE_CUDA_MPI" = yes ; then
 ac_fn_c_check_func "$LINENO" "cudaMalloc" "ac_cv_func_cudaMalloc"
 if test "x$ac_cv_func_cudaMalloc" = xyes; then :
-
-$as_echo "#define HAVE_CUDA_MPI /**/" >>confdefs.h
- HAVE_CUDA_MPI=cuda.mpi.txt
-else
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for cudaMalloc in -lcudart" >&5
 $as_echo_n "checking for cudaMalloc in -lcudart... " >&6; }
 if ${ac_cv_lib_cudart_cudaMalloc+:} false; then :
@@ -5805,12 +5801,12 @@ fi
 $as_echo "$ac_cv_lib_cudart_cudaMalloc" >&6; }
 if test "x$ac_cv_lib_cudart_cudaMalloc" = xyes; then :
 
-$as_echo "#define HAVE_CUDA_MPI /**/" >>confdefs.h
- HAVE_CUDA_MPI=cuda.mpi.txt LIBS="${LIBS} -lcudart"
+$as_echo "#define ENABLE_CUDA_MPI /**/" >>confdefs.h
+ ENABLE_CUDA_MPI=cuda.mpi.txt LIBS="${LIBS} -lcudart"
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: CUDA symbols not found.  CUDA-Aware MPI reporting deactivated." >&5
 $as_echo "CUDA symbols not found.  CUDA-Aware MPI reporting deactivated." >&6; }
-                HAVE_CUDA_MPI=/dev/null
+                ENABLE_CUDA_MPI=/dev/null
                 ENABLE_CUDA_MPI=no
                 exit 1
 fi
