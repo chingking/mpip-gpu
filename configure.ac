@@ -85,6 +85,17 @@ AC_ARG_WITH(libunwind,
 )
 AC_SUBST(LIBUNWIND_LOC)
 
+AC_ARG_WITH(cuda,
+	AS_HELP_STRING(--with-cuda,Specify location of CUDA toolkit),
+	CUDA_DIR=$withval
+	CFLAGS="${CFLAGS} -I${CUDA_DIR}/include"
+	LIBS="-L${CUDA_DIR}/lib64 ${LIBS}"
+	echo Using cuda: $withval
+	,
+	CUDA_DIR=/usr/local/cuda
+)
+AC_SUBST(CUDA_DIR)
+
 AC_ARG_WITH(bin-type-flag,
 	AS_HELP_STRING(--with-bin-type-flag,Binary format for AIX ar operations.),
 	BIN_TYPE_FLAG=$withval
@@ -174,7 +185,6 @@ AC_ARG_ENABLE(api-only,
 	fi
 	,
 )
-
 
 if test "$ENABLE_API_ONLY" = no ; then
 
@@ -357,6 +367,17 @@ AC_ARG_ENABLE(concise-report-default,
 	if test "x$enableval" = xyes ; then
                 AC_DEFINE([DEFAULT_REPORT_FORMAT], [mpiPi_style_concise],[The default format of the report])
 		echo "Using concise report as default."
+	fi
+	,
+)
+
+ENABLE_CUDA_MPI=no
+AC_ARG_ENABLE(cuda,
+	AS_HELP_STRING(--enable-cuda,Have mpiP default to profile CUDA-Aware MPI communication calls.),
+	if test "x$enableval" = xyes ; then
+        AC_DEFINE([ENABLE_CUDA_MPI],[], ["Use CUDA-Aware profiling by default"])
+        ENABLE_CUDA_MPI=yes
+		echo "Using CUDA-Aware MPI report as default."
 	fi
 	,
 )
@@ -573,6 +594,20 @@ else
   HAVE_MPI_NONBLOCKINGCOLLECTIVES=/dev/null
 fi
 
+if test "$ENABLE_CUDA_MPI" = yes ; then
+AC_CHECK_FUNC(cudaMalloc,
+              AC_DEFINE([HAVE_CUDA_MPI], [], [Have CUDA_MPI]) HAVE_CUDA_MPI=cuda.mpi.txt,
+	      AC_CHECK_LIB(cudart,cudaMalloc, 
+                AC_DEFINE([HAVE_CUDA_MPI],[],[Have CUDA-MPI]) HAVE_CUDA_MPI=cuda.mpi.txt LIBS="${LIBS} -lcudart",
+                AC_MSG_RESULT(CUDA symbols not found.  CUDA-Aware MPI reporting deactivated.)
+                HAVE_CUDA_MPI=/dev/null
+                ENABLE_CUDA_MPI=no
+                exit 1)
+)
+else
+  HAVE_CUDA_MPI=/dev/null
+fi
+
 if test "x$DISABLE_SO_LOOKUP" = "xno" && test "x$ENABLE_BFD" = xyes; then
   SO_LOOKUP=no
   #  Check for /proc/self/maps, can't use AC_CHECK_FILES since cross compiling
@@ -760,6 +795,7 @@ AC_SUBST_FILE(HAVE_MPI_IO)
 AC_SUBST_FILE(HAVE_MPI_RMA)
 AC_SUBST_FILE(HAVE_MPI_NONBLOCKINGCOLLECTIVES)
 AC_SUBST_FILE(FORTRAN_GETARG)
+AC_SUBST_FILE(HAVE_CUDA_MPI)
 
 if test "x${slibdir}" = x ; then
   slibdir=$libdir
@@ -788,4 +824,6 @@ echo
 echo "  MPI-I/O support          : ${ENABLE_MPI_IO}"
 echo "  MPI-RMA support          : ${ENABLE_MPI_RMA}"
 echo "  MPI-NBC support          : ${ENABLE_MPI_NONBLOCKINGCOLLECTIVES}"
+echo 
+echo "  CUDA-Aware MPI support   : ${ENABLE_CUDA_MPI}"
 echo "********************************************************************************"

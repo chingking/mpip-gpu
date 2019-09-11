@@ -667,6 +667,7 @@ ENABLE_MPI_NONBLOCKINGCOLLECTIVES
 ENABLE_MPI_RMA
 ENABLE_MPI_IO
 BIN_TYPE_FLAG
+CUDA_DIR
 LIBUNWIND_LOC
 BINUTILS_DIR
 FFLAGS
@@ -725,7 +726,8 @@ SHELL'
 ac_subst_files='FORTRAN_GETARG
 HAVE_MPI_IO
 HAVE_MPI_RMA
-HAVE_MPI_NONBLOCKINGCOLLECTIVES'
+HAVE_MPI_NONBLOCKINGCOLLECTIVES
+HAVE_CUDA_MPI'
 ac_user_opts='
 enable_option_checking
 with_cc
@@ -736,6 +738,7 @@ with_ldflags
 with_libs
 with_binutils_dir
 with_libunwind
+with_cuda
 with_bin_type_flag
 with_gettimeofday
 with_wtime
@@ -761,6 +764,7 @@ enable_demangling
 enable_check_time
 enable_collective_report_default
 enable_concise_report_default
+enable_cuda
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1412,6 +1416,8 @@ Optional Features:
   --enable-concise-report-default
                           Have mpiP default to a concise summary report
                           format. (see runtime flags -c and -v).
+  --enable-cuda           Have mpiP default to profile CUDA-Aware MPI
+                          communication calls.
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -1424,6 +1430,7 @@ Optional Packages:
   --with-libs             Specifies libraries (-llib1 -llib2).
   --with-binutils-dir     Base directory of binutils installation.
   --with-libunwind        Specify location of libunwind to merge.
+  --with-cuda             Specify location of CUDA toolkit
   --with-bin-type-flag    Binary format for AIX ar operations.
   --with-gettimeofday     Use gettimeofday for timing.
   --with-wtime            Use MPI_Wtime for timing.
@@ -2826,6 +2833,21 @@ fi
 
 
 
+# Check whether --with-cuda was given.
+if test "${with_cuda+set}" = set; then :
+  withval=$with_cuda; CUDA_DIR=$withval
+	CFLAGS="${CFLAGS} -I${CUDA_DIR}/include"
+	LIBS="-L${CUDA_DIR}/lib64 ${LIBS}"
+	echo Using cuda: $withval
+
+else
+  CUDA_DIR=/usr/local/cuda
+
+fi
+
+
+
+
 # Check whether --with-bin-type-flag was given.
 if test "${with_bin_type_flag+set}" = set; then :
   withval=$with_bin_type_flag; BIN_TYPE_FLAG=$withval
@@ -2956,7 +2978,6 @@ $as_echo "#define ENABLE_API_ONLY /**/" >>confdefs.h
 	fi
 
 fi
-
 
 
 if test "$ENABLE_API_ONLY" = no ; then
@@ -3182,6 +3203,20 @@ if test "${enable_concise_report_default+set}" = set; then :
 $as_echo "#define DEFAULT_REPORT_FORMAT mpiPi_style_concise" >>confdefs.h
 
 		echo "Using concise report as default."
+	fi
+
+fi
+
+
+ENABLE_CUDA_MPI=no
+# Check whether --enable-cuda was given.
+if test "${enable_cuda+set}" = set; then :
+  enableval=$enable_cuda; if test "x$enableval" = xyes ; then
+
+$as_echo "#define ENABLE_CUDA_MPI /**/" >>confdefs.h
+
+        ENABLE_CUDA_MPI=yes
+		echo "Using CUDA-Aware MPI report as default."
 	fi
 
 fi
@@ -5725,6 +5760,68 @@ else
   HAVE_MPI_NONBLOCKINGCOLLECTIVES=/dev/null
 fi
 
+if test "$ENABLE_CUDA_MPI" = yes ; then
+ac_fn_c_check_func "$LINENO" "cudaMalloc" "ac_cv_func_cudaMalloc"
+if test "x$ac_cv_func_cudaMalloc" = xyes; then :
+
+$as_echo "#define HAVE_CUDA_MPI /**/" >>confdefs.h
+ HAVE_CUDA_MPI=cuda.mpi.txt
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for cudaMalloc in -lcudart" >&5
+$as_echo_n "checking for cudaMalloc in -lcudart... " >&6; }
+if ${ac_cv_lib_cudart_cudaMalloc+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lcudart  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char cudaMalloc ();
+int
+main ()
+{
+return cudaMalloc ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_cudart_cudaMalloc=yes
+else
+  ac_cv_lib_cudart_cudaMalloc=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_cudart_cudaMalloc" >&5
+$as_echo "$ac_cv_lib_cudart_cudaMalloc" >&6; }
+if test "x$ac_cv_lib_cudart_cudaMalloc" = xyes; then :
+
+$as_echo "#define HAVE_CUDA_MPI /**/" >>confdefs.h
+ HAVE_CUDA_MPI=cuda.mpi.txt LIBS="${LIBS} -lcudart"
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: CUDA symbols not found.  CUDA-Aware MPI reporting deactivated." >&5
+$as_echo "CUDA symbols not found.  CUDA-Aware MPI reporting deactivated." >&6; }
+                HAVE_CUDA_MPI=/dev/null
+                ENABLE_CUDA_MPI=no
+                exit 1
+fi
+
+
+fi
+
+else
+  HAVE_CUDA_MPI=/dev/null
+fi
+
 if test "x$DISABLE_SO_LOOKUP" = "xno" && test "x$ENABLE_BFD" = xyes; then
   SO_LOOKUP=no
   #  Check for /proc/self/maps, can't use AC_CHECK_FILES since cross compiling
@@ -6189,6 +6286,7 @@ FORTRAN_TARGET=$FORTRAN_TARGET
 FORTRAN_STR_DECL=$FORTRAN_STR_DECL
 
 ENABLE_BFD=$ENABLE_BFD
+
 
 
 
@@ -7468,4 +7566,6 @@ echo
 echo "  MPI-I/O support          : ${ENABLE_MPI_IO}"
 echo "  MPI-RMA support          : ${ENABLE_MPI_RMA}"
 echo "  MPI-NBC support          : ${ENABLE_MPI_NONBLOCKINGCOLLECTIVES}"
+echo
+echo "  CUDA-Aware MPI support   : ${ENABLE_CUDA_MPI}"
 echo "********************************************************************************"
