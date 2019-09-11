@@ -12,6 +12,9 @@
 /* Enable BFD library for the PC to source lookups */
 #undef ENABLE_BFD
 
+/* Have CUDA-MPI */
+#undef ENABLE_CUDA_MPI
+
 /* Enable weak symbols for FORTRAN */
 #undef ENABLE_FORTRAN_WEAK_SYMS
 
