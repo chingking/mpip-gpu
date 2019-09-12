@@ -599,10 +599,7 @@ pt2ptList = [
     "MPI_Ssend"
   ]
 
-### TODO: support more MPI primitives
-# cudampi_List = pt2ptList + collectiveList
-
-cudampi_List = [ 
+cudampi_singlebuf_List = [ 
     "MPI_Bsend",
     "MPI_Ibsend",
     "MPI_Irsend",
@@ -619,9 +616,45 @@ cudampi_List = [
     "MPI_Rrecv",
     "MPI_Recv",
     "MPI_Srecv",
-    #"MPI_Sendrecv",
-    #"MPI_Sendrecv_replace",
+    "MPI_Sendrecv_replace",
   ]
+
+cudampi_recvbuf_List = [
+    "MPI_Sendrecv",
+    "MPI_Allgather", 
+    "MPI_Allgatherv", 
+    "MPI_Allreduce", 
+    "MPI_Alltoall", 
+    "MPI_Alltoallv", 
+    "MPI_Gather", 
+    "MPI_Gatherv", 
+    "MPI_Iallgather", 
+    "MPI_Iallgatherv", 
+    "MPI_Iallreduce", 
+    "MPI_Ialltoall", 
+    "MPI_Ialltoallv", 
+    "MPI_Ialltoallw", 
+    "MPI_Iexscan",
+    "MPI_Igather",
+    "MPI_Igatherv",
+    "MPI_Ireduce",
+    "MPI_Ireduce_scatter_block",
+    "MPI_Ireduce_scatter",
+    "MPI_Iscan",
+    "MPI_Iscatter",
+    "MPI_Iscatterv",
+    "MPI_Reduce", 
+    "MPI_Reduce_scatter", 
+    "MPI_Scatter", 
+    "MPI_Scatterv"
+  ]
+cudampi_bcast_List = [
+    "MPI_Bcast", 
+    "MPI_Ibcast", 
+  ]
+### TODO: support more MPI primitives
+cudampi_List = cudampi_singlebuf_List + cudampi_recvbuf_List + cudampi_bcast_List
+
 
 class VarDesc:
     def __init__ (self,name, basetype, pointerLevel, arrayLevel):
@@ -1228,9 +1261,15 @@ def CreateWrapper(funct, olist):
 
     # CUDA buffer check
     if funct in cudampi_List :
+        bufname = "buf"
+        if funct in cudampi_recvbuf_List :
+            bufname = "recvbuf"
+        else :
+            if funct in cudampi_bcast_List :
+                bufname = "buffer"
         olist.append("#ifdef ENABLE_CUDA_MPI\n")
-        olist.append("    if ((mpiPi.do_cuda_mpi_report == 1 && is_cuda_buffer(buf) == 0)\n")
-        olist.append("         || (mpiPi.do_cuda_mpi_report == 2 && is_cuda_buffer(buf) == 1)) {\n")
+        olist.append("    if ((mpiPi.do_cuda_mpi_report == 1 && is_cuda_buffer("+bufname+") == 0)\n")
+        olist.append("         || (mpiPi.do_cuda_mpi_report == 2 && is_cuda_buffer("+bufname+") == 1)) {\n")
         # call PMPI without profiling
         olist.append("\n    rc = P" + funct + "( " )
 
