@@ -378,6 +378,9 @@ mpiPi_print_report_header (FILE * fp)
                     mpiPi_vpatch);
   print_intro_line (fp, "MPIP Build date", "%s, %s", mpiPi_vdate,
                     mpiPi_vtime);
+#ifdef ENABLE_CUDA_MPI
+  print_intro_line (fp, "CUDA-Aware MPI Profiling Level", "%d (0: All MPI calls, 1: only CUDA-Aware MPI calls, 2: only non-CUDA-aware MPI calls)\n", mpiPi.do_cuda_mpi_report);
+#endif
   {
     char nowstr[128];
     const struct tm *nowstruct;

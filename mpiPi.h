@@ -199,6 +199,9 @@ typedef struct _mpiPi_t
   double coll_time_stats[MPIP_NFUNC][MPIP_COMM_HISTCNT][MPIP_SIZE_HISTCNT];
   int do_pt2pt_stats_report;
   double pt2pt_send_stats[MPIP_NFUNC][MPIP_COMM_HISTCNT][MPIP_SIZE_HISTCNT];
+#ifdef ENABLE_CUDA_MPI
+  int do_cuda_mpi_report;
+#endif
 }
 mpiPi_t;
 

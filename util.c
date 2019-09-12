@@ -80,7 +80,7 @@ mpiPi_getenv ()
 
       av[ac] = NULL;
 
-      for (; ((c = getopt (ac, av, "cdef:gk:lm:noprs:t:vx:yz")) != EOF);)
+      for (; ((c = getopt (ac, av, "cdef:gk:lm:noprs:t:vx:yzb:")) != EOF);)
         {
           switch (c)
             {
@@ -260,9 +260,13 @@ mpiPi_getenv ()
             case 'p':
               mpiPi.do_pt2pt_stats_report = 1;
               break;
+#ifdef ENABLE_CUDA_MPI
+            case 'b':
+              mpiPi.do_cuda_mpi_report = atoi (optarg);
+              break;
+#endif
 
             case 'a':
-            case 'b':
             case 'h':
             case 'i':
             case 'j':

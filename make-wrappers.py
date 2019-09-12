@@ -1079,14 +1079,6 @@ def CreateWrapper(funct, olist):
     olist.append( "  mpiPi_mt_stat_tls_t *hndl;\n" )
 
     olist.append("\n  hndl = mpiPi_stats_mt_gettls(&mpiPi.task_stats);\n")
-    
-    # CUDA buffer check
-    if funct in cudampi_List :
-        olist.append("#ifdef ENABLE_CUDA_MPI\n")
-        olist.append("  int is_cuda_buf = is_cuda_buffer(buf);\n")
-        olist.append("  if (is_cuda_buf==0) hndl->tls_ptr->disabled = 1;\n")
-        olist.append("#endif\n")
-
     olist.append("\nif (mpiPi_stats_mt_is_on(hndl)) {\n")
     if fdict[funct].wrapperPreList:
 	olist.extend(fdict[funct].wrapperPreList)
@@ -1233,6 +1225,24 @@ def CreateWrapper(funct, olist):
     if fdict[funct].wrapperPreList:
 	olist.extend(fdict[funct].wrapperPreList)
     olist.append(decl)
+
+    # CUDA buffer check
+    if funct in cudampi_List :
+        olist.append("#ifdef ENABLE_CUDA_MPI\n")
+        olist.append("    if ((mpiPi.do_cuda_mpi_report == 1 && is_cuda_buffer(buf) == 0)\n")
+        olist.append("         || (mpiPi.do_cuda_mpi_report == 2 && is_cuda_buffer(buf) == 1)) {\n")
+        # call PMPI without profiling
+        olist.append("\n    rc = P" + funct + "( " )
+
+        for i in fdict[funct].paramConciseList:
+            olist.append(i)
+            if fdict[funct].paramConciseList.index(i) < len(fdict[funct].paramConciseList) - 1:
+                olist.append(", ")
+        olist.append(");\n\n")
+        olist.append("  } else\n")
+        olist.append("#endif\n")
+    #  End of CUDA check
+
     if ( 'mips' in arch ) :
       olist.append("void *saved_ret_addr = __builtin_return_address(0);\n")
       olist.append("\nrc = mpiPif_" + funct + "( &saved_ret_addr, " )

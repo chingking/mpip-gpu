@@ -147,6 +147,9 @@ mpiPi_init (char *appName, mpiPi_thr_mode_t thr_mode)
 #ifdef SO_LOOKUP
   mpiPi.so_info = NULL;
 #endif
+#ifdef ENABLE_CUDA_MPI
+  mpiPi.do_cuda_mpi_report = 1;
+#endif
   mpiPi_getenv ();
 
   mpiPi_stats_mt_init(&mpiPi.task_stats, thr_mode);
@@ -158,6 +161,10 @@ mpiPi_init (char *appName, mpiPi_thr_mode_t thr_mode)
       mpiPi_msg ("%s V%d.%d.%d (Build %s/%s)\n", mpiPi.toolname, mpiPi_vmajor,
                  mpiPi_vminor, mpiPi_vpatch, mpiPi_vdate, mpiPi_vtime);
       mpiPi_msg ("Direct questions and errors to %s\n", MPIP_HELP_LIST);
+      mpiPi_msg ("This is the internal version developed by OSU NBCL\n");
+#ifdef ENABLE_CUDA_MPI
+      mpiPi_msg ("CUDA-Aware MPI Profiling Level: %d \n\tUse -b to select the options (0: All MPI calls, 1: only CUDA-Aware MPI calls, 2: only non-CUDA-aware MPI calls)\n", mpiPi.do_cuda_mpi_report);
+#endif
       mpiPi_msg ("\n");
     }
 
